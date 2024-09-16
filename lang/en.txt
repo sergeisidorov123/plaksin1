@@ -1,0 +1,12 @@
+welcome=Welcome!
+arithmetic=Arithmetic
+complex=Complex numbers
+analytic=Analytics
+arithmetic_instructions=Enter the number and precision (for example: 16, 4).
+complex_instructions=Enter the real and imaginary parts of the number and the number of decimal places (for example: 3, 4, 2).
+analytic_instructions=Enter an expression to calculate the root(for example: x**2)
+enter_expression=Enter the expression to extract the root.
+error_input=Input error. Please check the format.
+error_accuracy=Error: The accuracy cannot be negative.
+error_general=An error has occurred.
+unknown_command=Unknown command.

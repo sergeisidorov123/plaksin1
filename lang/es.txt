@@ -1,0 +1,12 @@
+welcome=Bienvenido!
+arithmetic=Aritmética
+complex=números Complejos
+analytic=Análisis
+arithmetic_instructions=Introduzca el número y la precisión (por ejemplo: 16, 4).
+complex_instructions=Introduzca las partes real e imaginaria del número y el número de decimales (por ejemplo: 3, 4, 2).
+analytic_instructions=Introduzca una expresión para calcular la raíz (por ejemplo: x * * 2)
+enter_expression=Introduzca una expresión para extraer la raíz.
+error_input=error de entrada. Por favor, compruebe el formato.
+error_accuracy=Error: la precisión no puede ser negativa.
+error_general=se ha Producido un error.
+unknown_command=comando Desconocido.
