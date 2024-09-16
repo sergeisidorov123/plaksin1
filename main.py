@@ -3,7 +3,7 @@ import sympy
 import telebot
 import os
 
-TOKEN = '7240415310:AAGOoQe_ln15vU2icX_w574-4uEm2XuxTXI'
+TOKEN = ''
 
 bot = telebot.TeleBot(TOKEN)
 
