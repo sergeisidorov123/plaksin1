@@ -3,6 +3,9 @@ import telebot
 import os
 import wolframalpha
 import re
+from decimal import Decimal, getcontext
+
+
 
 TOKEN = ''
 APP_ID = ""
@@ -139,16 +142,36 @@ def process_arithmetic(message):
         return
 
     try:
-        num, accuracy = map(float, message.text.split(","))
+        num_str, accuracy_str = message.text.split(",")
+        num = float(num_str)
+        accuracy = float(accuracy_str)
 
-        if num < 0:
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_root"))
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"))
+        if '.' in accuracy_str:
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_fractional_accuracy"))
+            markup = create_back_only_markup(message.chat.id)
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
+                             reply_markup=markup)
             bot.register_next_step_handler(message, process_arithmetic)
             return
 
         if accuracy < 0:
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_accuracy"))
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_accuracy"))
+            markup = create_back_only_markup(message.chat.id)
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
+                             reply_markup=markup)
+            bot.register_next_step_handler(message, process_arithmetic)
+            return
+
+        if num == 0:
+            bot.send_message(message.chat.id, "Корень из 0: 0")
+            markup = create_back_only_markup(message.chat.id)
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
+                             reply_markup=markup)
+            bot.register_next_step_handler(message, process_arithmetic)
+            return
+
+        if num < 0:
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_root"))
             bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"))
             bot.register_next_step_handler(message, process_arithmetic)
             return
@@ -162,7 +185,7 @@ def process_arithmetic(message):
         bot.register_next_step_handler(message, process_arithmetic)
 
     except ValueError:
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_input"))
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
                          reply_markup=markup)
@@ -175,9 +198,30 @@ def process_complex(message):
         return
 
     try:
-        real_part, imaginary_part, decimal_places = map(float, message.text.split(","))
+        real_part_str, imaginary_part_str, decimal_places_str = message.text.split(",")
+
+        if '.' in decimal_places_str:
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_fractional_accuracy"))
+            markup = create_back_only_markup(message.chat.id)
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
+                             reply_markup=markup)
+            bot.register_next_step_handler(message, process_complex)
+            return
+
+        real_part = float(real_part_str)
+        imaginary_part = float(imaginary_part_str)
+        decimal_places = int(decimal_places_str)
+
+        if decimal_places < 0:
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_accuracy"))
+            markup = create_back_only_markup(message.chat.id)
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
+                             reply_markup=markup)
+            bot.register_next_step_handler(message, process_complex)
+            return
+
         complex_number = complex(real_part, imaginary_part)
-        result = sqrt_of_complex(complex_number, int(decimal_places))
+        result = sqrt_of_complex(complex_number, decimal_places)
 
         bot.send_message(message.chat.id, f"{result}")
 
@@ -186,11 +230,8 @@ def process_complex(message):
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_complex)
 
-    except Exception as e:
-        bot.send_message(
-            message.chat.id,
-            get_translation(message.chat.id, "error_input") + str(e)
-        )
+    except ValueError:
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
                          reply_markup=markup)
@@ -201,8 +242,28 @@ def process_analytical(message):
     if message.text == get_translation(message.chat.id, 'back_button'):
         handle_back(message)
         return
+
     try:
-        result = wolfram_calc(message.text)
+        question = message.text
+        if ',' in question:
+            question, decimal_places_str = question.split(',')
+            if '.' in decimal_places_str:
+                bot.send_message(message.chat.id, get_translation(message.chat.id, "error_fractional_accuracy"))
+                markup = create_back_only_markup(message.chat.id)
+                bot.send_message(message.chat.id, get_translation(message.chat.id, "enter_expression"),
+                                 reply_markup=markup)
+                bot.register_next_step_handler(message, process_analytical)
+                return
+            decimal_places = int(decimal_places_str)
+            if decimal_places < 0:
+                bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_accuracy"))
+                markup = create_back_only_markup(message.chat.id)
+                bot.send_message(message.chat.id, get_translation(message.chat.id, "enter_expression"),
+                                 reply_markup=markup)
+                bot.register_next_step_handler(message, process_analytical)
+                return
+
+        result = wolfram_calc(question)
         bot.send_message(message.chat.id, f"{result}")
 
         markup = create_back_only_markup(message.chat.id)
@@ -210,41 +271,40 @@ def process_analytical(message):
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_analytical)
 
-    except Exception as e:
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_analytical") + str(e))
+    except ValueError:
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "enter_expression"),
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_analytical)
 
 
-def sqrt_with_accuracy(num: float, accuracy: int) -> float:
+def sqrt_with_accuracy(num: float, accuracy: int) -> Decimal:
     if accuracy < 0:
         raise ValueError("Точность не может быть отрицательной")
 
-    precision = 10 ** (-accuracy)
+    getcontext().prec = accuracy + 2
 
-    low = 0
-    high = num
-    mid = (low + high) / 2
+    num_decimal = Decimal(num)
 
-    while abs(mid ** 2 - num) > precision:
-        if mid ** 2 < num:
-            low = mid
-        else:
-            high = mid
-        mid = (low + high) / 2
+    guess = num_decimal / 2
+    tolerance = Decimal('1e-' + str(accuracy))
 
-    return round(mid, accuracy)
+    while abs(guess * guess - num_decimal) > tolerance:
+        guess = (guess + num_decimal / guess) / 2
+
+    return guess.quantize(Decimal(10) ** -accuracy)
 
 
-def sqrt_of_complex(number: complex, decimal_places: int) -> complex:
-    sqrt_result = cmath.sqrt(number)
+def sqrt_of_complex(real_part: Decimal, imaginary_part: Decimal, decimal_places: int) -> str:
+    complex_number = complex(float(real_part), float(imaginary_part))
 
-    real_part = round(sqrt_result.real, decimal_places)
-    imaginary_part = round(sqrt_result.imag, decimal_places)
+    sqrt_result = cmath.sqrt(complex_number)
 
-    return complex(real_part, imaginary_part)
+    real_decimal = Decimal(sqrt_result.real).quantize(Decimal(10) ** -decimal_places)
+    imaginary_decimal = Decimal(sqrt_result.imag).quantize(Decimal(10) ** -decimal_places)
+
+    return f"{real_decimal} + {imaginary_decimal}i" if imaginary_decimal >= 0 else f"{real_decimal} - {abs(imaginary_decimal)}i"
 
 
 def save_feedback_to_file(user_id):
