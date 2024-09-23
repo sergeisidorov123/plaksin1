@@ -23,7 +23,7 @@ def wolfram_calc(question):
 
 
 def load_language(language_code):
-    lang_file_path = f'C:/Users/111/PycharmProjects/proektniiseminar1/lang/{language_code}.txt'
+    lang_file_path = f'C:/Users/111/Documents/GitHub/plaksin1/lang/{language_code}.txt'
     if os.path.exists(lang_file_path):
         with open(lang_file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -154,7 +154,8 @@ def process_arithmetic(message):
             return
 
         if accuracy < 0:
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_accuracy"))
+            error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=accuracy_str)
+            bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
                              reply_markup=markup)
@@ -199,6 +200,10 @@ def process_complex(message):
     try:
         real_part_str, imaginary_part_str, decimal_places_str = message.text.split(",")
 
+        real_part_str = real_part_str.strip()
+        imaginary_part_str = imaginary_part_str.strip()
+        decimal_places_str = decimal_places_str.strip()
+
         if '.' in decimal_places_str:
             bot.send_message(message.chat.id, get_translation(message.chat.id, "error_fractional_accuracy"))
             markup = create_back_only_markup(message.chat.id)
@@ -209,10 +214,19 @@ def process_complex(message):
 
         real_part = float(real_part_str)
         imaginary_part = float(imaginary_part_str)
-        decimal_places = int(decimal_places_str)
+
+        try:
+            decimal_places = int(decimal_places_str)
+        except ValueError:
+            bot.send_message(message.chat.id, f"Ошибка. Точность НЕ записана. Ваш ввод: '{decimal_places_str}'. Введите целое, положительное число, чтобы ввести точность вычислений.")
+            markup = create_back_only_markup(message.chat.id)
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
+                             reply_markup=markup)
+            bot.register_next_step_handler(message, process_complex)
+            return
 
         if decimal_places < 0:
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_accuracy"))
+            bot.send_message(message.chat.id, f"Ошибка. Точность НЕ записана. Ваш ввод: {decimal_places}. Введите целое, положительное число, чтобы ввести точность вычислений.")
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
                              reply_markup=markup)
@@ -235,23 +249,6 @@ def process_complex(message):
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_complex)
 
-
-        complex_number = complex(real_part, imaginary_part)
-        result = sqrt_of_complex(complex_number, decimal_places)
-
-        bot.send_message(message.chat.id, f"{result}")
-
-        markup = create_back_only_markup(message.chat.id)
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
-                         reply_markup=markup)
-        bot.register_next_step_handler(message, process_complex)
-
-    except ValueError:
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
-        markup = create_back_only_markup(message.chat.id)
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
-                         reply_markup=markup)
-        bot.register_next_step_handler(message, process_complex)
 
 
 def process_analytical(message):
@@ -295,14 +292,16 @@ def process_analytical(message):
         bot.register_next_step_handler(message, process_analytical)
 
 
-def sqrt_with_accuracy(num: float, accuracy: int) -> Decimal:
+def sqrt_with_accuracy(num: float, accuracy: int, chat_id: int) -> Decimal:
     if accuracy < 0:
-        raise ValueError("Точность не может быть отрицательной")
+        error_message = get_translation(chat_id, "error_negative_accuracy")
+        if not error_message:
+            error_message = "Точность не может быть отрицательной"
+        raise ValueError(error_message)
 
     getcontext().prec = accuracy + 2
 
     num_decimal = Decimal(num)
-
     guess = num_decimal / 2
     tolerance = Decimal('1e-' + str(accuracy))
 
@@ -310,6 +309,7 @@ def sqrt_with_accuracy(num: float, accuracy: int) -> Decimal:
         guess = (guess + num_decimal / guess) / 2
 
     return guess.quantize(Decimal(10) ** -accuracy)
+
 
 
 def sqrt_of_complex(real_part: Decimal, imaginary_part: Decimal, decimal_places: int) -> str:
