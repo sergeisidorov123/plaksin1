@@ -6,7 +6,6 @@ import re
 from decimal import Decimal, getcontext
 
 
-
 TOKEN = ''
 APP_ID = ""
 bot = telebot.TeleBot(TOKEN)
@@ -219,6 +218,23 @@ def process_complex(message):
                              reply_markup=markup)
             bot.register_next_step_handler(message, process_complex)
             return
+
+        result = sqrt_of_complex(real_part, imaginary_part, decimal_places)
+
+        bot.send_message(message.chat.id, f"{result}")
+
+        markup = create_back_only_markup(message.chat.id)
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
+                         reply_markup=markup)
+        bot.register_next_step_handler(message, process_complex)
+
+    except ValueError:
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
+        markup = create_back_only_markup(message.chat.id)
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
+                         reply_markup=markup)
+        bot.register_next_step_handler(message, process_complex)
+
 
         complex_number = complex(real_part, imaginary_part)
         result = sqrt_of_complex(complex_number, decimal_places)
