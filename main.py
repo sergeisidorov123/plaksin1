@@ -141,19 +141,24 @@ def process_arithmetic(message):
         return
 
     try:
-        num_str, accuracy_str = message.text.split(",")
-        num = float(num_str)
-        accuracy = float(accuracy_str)
-
-        if '.' in accuracy_str:
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_fractional_accuracy"))
+        # Проверка на наличие двух параметров
+        if ',' not in message.text:
+            error_message = "Ошибка: ввод должен быть в формате 'число, точность'"
+            bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
                              reply_markup=markup)
             bot.register_next_step_handler(message, process_arithmetic)
             return
 
-        if accuracy < 0:
+        num_str, accuracy_str = map(str.strip, message.text.split(","))
+
+        # Преобразуем в соответствующие типы
+        num = float(num_str)
+        accuracy = int(accuracy_str)
+
+        # Проверка на отрицательные значения и вещественные числа для точности
+        if accuracy < 0 or not accuracy_str.isdigit():
             error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=accuracy_str)
             bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
@@ -162,22 +167,19 @@ def process_arithmetic(message):
             bot.register_next_step_handler(message, process_arithmetic)
             return
 
-        if num == 0:
-            bot.send_message(message.chat.id, "Корень из 0: 0")
+        if num < 0:
+            error_message = get_translation(message.chat.id, "error_negative_root").format(input_value=num_str)
+            bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
                              reply_markup=markup)
             bot.register_next_step_handler(message, process_arithmetic)
             return
 
-        if num < 0:
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_root"))
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"))
-            bot.register_next_step_handler(message, process_arithmetic)
-            return
-
-        sqrt_result = sqrt_with_accuracy(num, int(accuracy))
-        bot.send_message(message.chat.id, f"+{sqrt_result}, -{sqrt_result}")
+        # Вычисляем корень
+        sqrt_result = sqrt_with_accuracy(num, accuracy, message.chat.id)
+        bot.send_message(message.chat.id,
+                         f"Алгебраическим корнем из числа {num} являются числа: +{sqrt_result}, -{sqrt_result}")
 
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
@@ -185,7 +187,8 @@ def process_arithmetic(message):
         bot.register_next_step_handler(message, process_arithmetic)
 
     except ValueError:
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
+        error_message = get_translation(message.chat.id, "error_string_input").format(input_value=message.text)
+        bot.send_message(message.chat.id, error_message)
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
                          reply_markup=markup)
@@ -198,44 +201,36 @@ def process_complex(message):
         return
 
     try:
-        real_part_str, imaginary_part_str, decimal_places_str = message.text.split(",")
-
-        real_part_str = real_part_str.strip()
-        imaginary_part_str = imaginary_part_str.strip()
-        decimal_places_str = decimal_places_str.strip()
-
-        if '.' in decimal_places_str:
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "error_fractional_accuracy"))
+        # Проверка на наличие трех параметров
+        if ',' not in message.text or message.text.count(',') != 2:
+            error_message = "Ошибка: ввод должен быть в формате 'реальная часть, мнимая часть, точность'"
+            bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
                              reply_markup=markup)
             bot.register_next_step_handler(message, process_complex)
             return
 
-        real_part = float(real_part_str)
-        imaginary_part = float(imaginary_part_str)
+        real_str, imaginary_str, decimal_places_str = map(str.strip, message.text.split(","))
 
-        try:
-            decimal_places = int(decimal_places_str)
-        except ValueError:
-            bot.send_message(message.chat.id, f"Ошибка. Точность НЕ записана. Ваш ввод: '{decimal_places_str}'. Введите целое, положительное число, чтобы ввести точность вычислений.")
+        # Преобразуем в соответствующие типы
+        real_part = float(real_str)
+        imaginary_part = float(imaginary_str)
+        decimal_places = int(decimal_places_str)
+
+        # Проверка на отрицательные значения и вещественные числа для десятичных мест
+        if decimal_places < 0 or not decimal_places_str.isdigit():
+            error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=decimal_places_str)
+            bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
                              reply_markup=markup)
             bot.register_next_step_handler(message, process_complex)
             return
 
-        if decimal_places < 0:
-            bot.send_message(message.chat.id, f"Ошибка. Точность НЕ записана. Ваш ввод: {decimal_places}. Введите целое, положительное число, чтобы ввести точность вычислений.")
-            markup = create_back_only_markup(message.chat.id)
-            bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
-                             reply_markup=markup)
-            bot.register_next_step_handler(message, process_complex)
-            return
-
+        complex_number = complex(real_part, imaginary_part)
         result = sqrt_of_complex(real_part, imaginary_part, decimal_places)
-
-        bot.send_message(message.chat.id, f"{result}")
+        bot.send_message(message.chat.id, f"Алгебраическим корнем из числа {complex_number} является/являются числа: {result}")
 
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
@@ -243,7 +238,16 @@ def process_complex(message):
         bot.register_next_step_handler(message, process_complex)
 
     except ValueError:
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
+        error_message = get_translation(message.chat.id, "error_string_input").format(input_value=message.text)
+        bot.send_message(message.chat.id, error_message)
+        markup = create_back_only_markup(message.chat.id)
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
+                         reply_markup=markup)
+        bot.register_next_step_handler(message, process_complex)
+
+    except Exception as e:
+        error_message = f"Ошибка: {str(e)}"
+        bot.send_message(message.chat.id, error_message)
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
                          reply_markup=markup)
