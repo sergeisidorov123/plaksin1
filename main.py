@@ -141,7 +141,6 @@ def process_arithmetic(message):
         return
 
     try:
-        # Проверка на наличие двух параметров
         if ',' not in message.text:
             error_message = "Ошибка: ввод должен быть в формате 'число, точность'"
             bot.send_message(message.chat.id, error_message)
@@ -153,11 +152,9 @@ def process_arithmetic(message):
 
         num_str, accuracy_str = map(str.strip, message.text.split(","))
 
-        # Преобразуем в соответствующие типы
-        num = float(num_str)
+        num = Decimal(num_str)
         accuracy = int(accuracy_str)
 
-        # Проверка на отрицательные значения и вещественные числа для точности
         if accuracy < 0 or not accuracy_str.isdigit():
             error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=accuracy_str)
             bot.send_message(message.chat.id, error_message)
@@ -176,7 +173,6 @@ def process_arithmetic(message):
             bot.register_next_step_handler(message, process_arithmetic)
             return
 
-        # Вычисляем корень
         sqrt_result = sqrt_with_accuracy(num, accuracy, message.chat.id)
         bot.send_message(message.chat.id,
                          f"Алгебраическим корнем из числа {num} являются числа: +{sqrt_result}, -{sqrt_result}")
@@ -201,7 +197,6 @@ def process_complex(message):
         return
 
     try:
-        # Проверка на наличие трех параметров
         if ',' not in message.text or message.text.count(',') != 2:
             error_message = "Ошибка: ввод должен быть в формате 'реальная часть, мнимая часть, точность'"
             bot.send_message(message.chat.id, error_message)
@@ -213,12 +208,10 @@ def process_complex(message):
 
         real_str, imaginary_str, decimal_places_str = map(str.strip, message.text.split(","))
 
-        # Преобразуем в соответствующие типы
         real_part = float(real_str)
         imaginary_part = float(imaginary_str)
         decimal_places = int(decimal_places_str)
 
-        # Проверка на отрицательные значения и вещественные числа для десятичных мест
         if decimal_places < 0 or not decimal_places_str.isdigit():
             error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=decimal_places_str)
             bot.send_message(message.chat.id, error_message)
@@ -252,7 +245,6 @@ def process_complex(message):
         bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_complex)
-
 
 
 def process_analytical(message):
@@ -299,11 +291,9 @@ def process_analytical(message):
 def sqrt_with_accuracy(num: float, accuracy: int, chat_id: int) -> Decimal:
     if accuracy < 0:
         error_message = get_translation(chat_id, "error_negative_accuracy")
-        if not error_message:
-            error_message = "Точность не может быть отрицательной"
         raise ValueError(error_message)
 
-    getcontext().prec = accuracy + 2
+    getcontext().prec = max(accuracy + 2, 100)
 
     num_decimal = Decimal(num)
     guess = num_decimal / 2
@@ -312,8 +302,10 @@ def sqrt_with_accuracy(num: float, accuracy: int, chat_id: int) -> Decimal:
     while abs(guess * guess - num_decimal) > tolerance:
         guess = (guess + num_decimal / guess) / 2
 
-    return guess.quantize(Decimal(10) ** -accuracy)
+    if guess == 0:
+        raise ValueError("Ошибка: вычисленный guess равен нулю.")
 
+    return guess.quantize(Decimal(10) ** -accuracy)
 
 
 def sqrt_of_complex(real_part: Decimal, imaginary_part: Decimal, decimal_places: int) -> str:
