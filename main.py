@@ -3,7 +3,7 @@ import telebot
 import os
 import wolframalpha
 import re
-from decimal import Decimal, getcontext
+from decimal import Decimal, getcontext, InvalidOperation
 
 
 TOKEN = ''
@@ -152,8 +152,20 @@ def process_arithmetic(message):
 
         num_str, accuracy_str = map(str.strip, message.text.split(","))
 
+        if num_str == "0":
+            bot.send_message(message.chat.id, "Корень из нуля равен нулю.")
+            markup = create_back_only_markup(message.chat.id)
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
+                             reply_markup=markup)
+            bot.register_next_step_handler(message, process_arithmetic)
+            return
+
         num = Decimal(num_str)
         accuracy = int(accuracy_str)
+
+        if accuracy > 1000:
+            accuracy = 1000
+            bot.send_message(message.chat.id, "Максимальная точность = 1000. Расчет будет произведен с точностью 1000.")
 
         if accuracy < 0 or not accuracy_str.isdigit():
             error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=accuracy_str)
@@ -182,7 +194,7 @@ def process_arithmetic(message):
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_arithmetic)
 
-    except ValueError:
+    except InvalidOperation:
         error_message = get_translation(message.chat.id, "error_string_input").format(input_value=message.text)
         bot.send_message(message.chat.id, error_message)
         markup = create_back_only_markup(message.chat.id)
@@ -211,6 +223,10 @@ def process_complex(message):
         real_part = float(real_str)
         imaginary_part = float(imaginary_str)
         decimal_places = int(decimal_places_str)
+
+        if decimal_places > 1000:
+            decimal_places = 1000
+            bot.send_message(message.chat.id, "Максимальная точность = 1000. Расчет будет произведен с точностью 1000.")
 
         if decimal_places < 0 or not decimal_places_str.isdigit():
             error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=decimal_places_str)
@@ -293,7 +309,7 @@ def sqrt_with_accuracy(num: float, accuracy: int, chat_id: int) -> Decimal:
         error_message = get_translation(chat_id, "error_negative_accuracy")
         raise ValueError(error_message)
 
-    getcontext().prec = max(accuracy + 2, 100)
+    getcontext().prec = max(accuracy + 2, 1000)
 
     num_decimal = Decimal(num)
     guess = num_decimal / 2
@@ -309,7 +325,15 @@ def sqrt_with_accuracy(num: float, accuracy: int, chat_id: int) -> Decimal:
 
 
 def sqrt_of_complex(real_part: Decimal, imaginary_part: Decimal, decimal_places: int) -> str:
-    complex_number = complex(float(real_part), float(imaginary_part))
+    if decimal_places > 1000:
+        decimal_places = 1000
+
+    getcontext().prec = decimal_places + 5
+
+    real_part_decimal = Decimal(real_part)
+    imaginary_part_decimal = Decimal(imaginary_part)
+
+    complex_number = complex(real_part_decimal, imaginary_part_decimal)
 
     sqrt_result = cmath.sqrt(complex_number)
 
@@ -317,6 +341,7 @@ def sqrt_of_complex(real_part: Decimal, imaginary_part: Decimal, decimal_places:
     imaginary_decimal = Decimal(sqrt_result.imag).quantize(Decimal(10) ** -decimal_places)
 
     return f"{real_decimal} + {imaginary_decimal}i" if imaginary_decimal >= 0 else f"{real_decimal} - {abs(imaginary_decimal)}i"
+
 
 
 def save_feedback_to_file(user_id):
