@@ -15,7 +15,7 @@ choose_expression_type=选择方程类型
 error_negative_accuracy=错误。精度未记录。您的输入：{input_value} — 是负数和/或小数。请输入一个正整数以输入计算精度。
 error_string_input=错误：您输入了字符串。
 error_fractional_accuracy=错误：精度不能为分数。
-back_button=返回
+back_button=更改语言
 root_of_zero=零的代数根是：0
 roots_message={0} 的代数根是：+{1}, -{1}
 error_not_number=错误。输入了非数字：“{0}”。
@@ -26,3 +26,4 @@ max_accuracy_warning=最大精度：1000。计算将以1000的精度进行。
 arithmetic_root_result={num} 的代数根是：+{result}, -{result}。
 complex_input_format_error＝错误：输入必须是 '实部，虚部，精度' 格式。
 complex_root_result＝复数 {complex_number} 的平方根是 {result}。
+only_back_button=返回

@@ -75,7 +75,7 @@ def create_back_markup(options, user_id):
 
 def create_back_only_markup(user_id):
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    back_button_text = get_translation(user_id, 'back_button')
+    back_button_text = get_translation(user_id, 'only_back_button')
     markup.row(back_button_text)
     return markup
 
@@ -159,7 +159,7 @@ def handle_analytic_command(message):
 
 
 def process_arithmetic(message):
-    if message.text == get_translation(message.chat.id, 'back_button'):
+    if message.text == get_translation(message.chat.id, 'only_back_button'):
         handle_back(message)
         return
 
@@ -247,9 +247,8 @@ def process_arithmetic(message):
         bot.register_next_step_handler(message, process_arithmetic)
 
 
-
 def process_complex(message):
-    if message.text == get_translation(message.chat.id, 'back_button'):
+    if message.text == get_translation(message.chat.id, 'only_back_button'):
         handle_back(message)
         return
 
@@ -310,7 +309,7 @@ def process_complex(message):
 
 
 def process_analytical(message):
-    if message.text == get_translation(message.chat.id, 'back_button'):
+    if message.text == get_translation(message.chat.id, 'only_back_button'):
         handle_back(message)
         return
 
