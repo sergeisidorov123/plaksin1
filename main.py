@@ -6,8 +6,8 @@ import re
 from decimal import Decimal, getcontext, InvalidOperation
 
 
-TOKEN = '7397292799:AAG64mPgGubxVL6d2GieI6qWd2-3T68mujA'
-APP_ID = "VWG2EK-P7TP7TUH3A"
+TOKEN = ''
+APP_ID = ""
 bot = telebot.TeleBot(TOKEN)
 
 feedback_data = {}
