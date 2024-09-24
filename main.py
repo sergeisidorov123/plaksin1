@@ -6,7 +6,7 @@ import re
 from decimal import Decimal, getcontext, InvalidOperation
 
 
-TOKEN = ''
+TOKEN = ""
 APP_ID = ""
 bot = telebot.TeleBot(TOKEN)
 
@@ -17,9 +17,30 @@ user_state = {}
 
 def wolfram_calc(question):
     client = wolframalpha.Client(APP_ID)
-    res = client.query(f"simplified square root of {question}")
-    answer = next(res.results).text
-    return answer
+
+    try:
+        res = client.query(f"simplified abs square root of {question}")
+
+        result = next(res.results, None)
+
+        if result is None:
+            return "Пожалуйста,введите корректное выражение."
+
+        answer = result.text
+
+        if 'sqrt' in answer and 'abs' in answer:
+            answer = answer.replace('abs', '1', 1)
+            answer = answer.replace('sqrt', '2', 1)
+            answer = answer.replace('1', 'sqrt', 1)
+            answer = answer.replace('2', 'abs', 1)
+
+        if 'abs' in answer:
+            answer = answer.replace('abs', '+-', 1)
+
+        return answer
+
+    except Exception as e:
+        return f"Произошла ошибка при обработке запроса: {str(e)}"
 
 
 def load_language(language_code):
@@ -133,7 +154,7 @@ def handle_complex_command(message):
 def handle_analytic_command(message):
     user_state[message.chat.id] = 'analytic'
     markup = create_back_only_markup(message.chat.id)
-    bot.send_message(message.chat.id, get_translation(message.chat.id, "enter_expression"), reply_markup=markup)
+    bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"), reply_markup=markup)
     bot.register_next_step_handler(message, process_analytical)
 
 
@@ -143,7 +164,9 @@ def process_arithmetic(message):
         return
 
     try:
-        if ',' not in message.text:
+        input_data = message.text.split(",")
+
+        if len(input_data) != 2:
             error_message = get_translation(message.chat.id, "arithmetic_input_format_error")
             bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
@@ -152,7 +175,7 @@ def process_arithmetic(message):
             bot.register_next_step_handler(message, process_arithmetic)
             return
 
-        num_str, accuracy_str = map(str.strip, message.text.split(","))
+        num_str, accuracy_str = map(str.strip, input_data)
 
         if num_str == "0":
             bot.send_message(message.chat.id, get_translation(message.chat.id, "zero_root_result"))
@@ -164,6 +187,7 @@ def process_arithmetic(message):
 
         num = Decimal(num_str)
         accuracy = int(accuracy_str)
+
 
         if accuracy > 1000:
             accuracy = 1000
@@ -178,6 +202,7 @@ def process_arithmetic(message):
             bot.register_next_step_handler(message, process_arithmetic)
             return
 
+
         if num < 0:
             error_message = get_translation(message.chat.id, "error_negative_root").format(input_value=num_str)
             bot.send_message(message.chat.id, error_message)
@@ -186,6 +211,7 @@ def process_arithmetic(message):
                              reply_markup=markup)
             bot.register_next_step_handler(message, process_arithmetic)
             return
+
 
         sqrt_result = sqrt_with_accuracy(num, accuracy, message.chat.id)
         bot.send_message(message.chat.id,
@@ -203,6 +229,23 @@ def process_arithmetic(message):
         bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_arithmetic)
+
+    except ValueError as ve:
+        error_message = get_translation(message.chat.id, "error_string_input").format(input_value=message.text)
+        bot.send_message(message.chat.id, error_message)
+        markup = create_back_only_markup(message.chat.id)
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
+                         reply_markup=markup)
+        bot.register_next_step_handler(message, process_arithmetic)
+
+    except Exception as e:
+        error_message = f"Ошибка: {str(e)}"
+        bot.send_message(message.chat.id, error_message)
+        markup = create_back_only_markup(message.chat.id)
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
+                         reply_markup=markup)
+        bot.register_next_step_handler(message, process_arithmetic)
+
 
 
 def process_complex(message):
@@ -278,7 +321,7 @@ def process_analytical(message):
             if '.' in decimal_places_str:
                 bot.send_message(message.chat.id, get_translation(message.chat.id, "error_fractional_accuracy"))
                 markup = create_back_only_markup(message.chat.id)
-                bot.send_message(message.chat.id, get_translation(message.chat.id, "enter_expression"),
+                bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"),
                                  reply_markup=markup)
                 bot.register_next_step_handler(message, process_analytical)
                 return
@@ -286,7 +329,7 @@ def process_analytical(message):
             if decimal_places < 0:
                 bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_accuracy"))
                 markup = create_back_only_markup(message.chat.id)
-                bot.send_message(message.chat.id, get_translation(message.chat.id, "enter_expression"),
+                bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructionsn"),
                                  reply_markup=markup)
                 bot.register_next_step_handler(message, process_analytical)
                 return
@@ -295,14 +338,14 @@ def process_analytical(message):
         bot.send_message(message.chat.id, f"{result}")
 
         markup = create_back_only_markup(message.chat.id)
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "enter_expression"),
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"),
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_analytical)
 
     except ValueError:
         bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
         markup = create_back_only_markup(message.chat.id)
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "enter_expression"),
+        bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"),
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_analytical)
 
