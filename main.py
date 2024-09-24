@@ -45,7 +45,7 @@ def wolfram_calc(question, chat_id):
         result = next(res.results, None)
 
         if result is None:
-            return get_translation(chat_id, "error_wolfram")  # Используйте get_translation для сообщений об ошибках
+            return get_translation(chat_id, "error_wolfram")
 
         answer = result.text
 
@@ -61,7 +61,7 @@ def wolfram_calc(question, chat_id):
         return answer
 
     except Exception as e:
-        return get_translation(chat_id, "error_wolfram")  # Используйте get_translation для сообщений об ошибках
+        return get_translation(chat_id, "error_wolfram")
 
 
 def create_back_markup(options, user_id):
