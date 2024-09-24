@@ -27,3 +27,5 @@ arithmetic_root_result=Las raíces algebraicas de {num} son: +{result}, -{result
 complex_input_format_error=Error: la entrada debe estar en el formato 'parte real, parte imaginaria, precisión'.
 complex_root_result=La raíz del número complejo {complex_number} es {result}.
 only_back_button=Atrás
+error_wolfram=Por favor, introduce una expresión válida.
+analytic_root_result=La raíz de la expresión analítica {number} es {result}.

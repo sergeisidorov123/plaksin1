@@ -27,3 +27,5 @@ arithmetic_root_result={num} 的代数根是：+{result}, -{result}。
 complex_input_format_error＝错误：输入必须是 '实部，虚部，精度' 格式。
 complex_root_result＝复数 {complex_number} 的平方根是 {result}。
 only_back_button=返回
+error_wolfram=请输入有效的表达式。
+analytic_root_result=分析表达式 {number} 的根是 {result}。

@@ -15,34 +15,6 @@ user_language = {}
 user_state = {}
 
 
-def wolfram_calc(question):
-    client = wolframalpha.Client(APP_ID)
-
-    try:
-        res = client.query(f"simplified abs square root of {question}")
-
-        result = next(res.results, None)
-
-        if result is None:
-            return "Пожалуйста,введите корректное выражение."
-
-        answer = result.text
-
-        if 'sqrt' in answer and 'abs' in answer:
-            answer = answer.replace('abs', '1', 1)
-            answer = answer.replace('sqrt', '2', 1)
-            answer = answer.replace('1', 'sqrt', 1)
-            answer = answer.replace('2', 'abs', 1)
-
-        if 'abs' in answer:
-            answer = answer.replace('abs', '+-', 1)
-
-        return answer
-
-    except Exception as e:
-        return f"Произошла ошибка при обработке запроса: {str(e)}"
-
-
 def load_language(language_code):
     lang_file_path = f'C:/Users/111/Documents/GitHub/plaksin1/lang/{language_code}.txt'
     if os.path.exists(lang_file_path):
@@ -63,6 +35,33 @@ def get_translation(user_id, key):
     if translations and key in translations:
         return translations[key]
     return None
+
+
+def wolfram_calc(question, chat_id):
+    client = wolframalpha.Client(APP_ID)
+    try:
+        res = client.query(f"simplified abs square root of {question}")
+
+        result = next(res.results, None)
+
+        if result is None:
+            return get_translation(chat_id, "error_wolfram")  # Используйте get_translation для сообщений об ошибках
+
+        answer = result.text
+
+        if 'sqrt' in answer and 'abs' in answer:
+            answer = answer.replace('abs', '1', 1)
+            answer = answer.replace('sqrt', '2', 1)
+            answer = answer.replace('1', 'sqrt', 1)
+            answer = answer.replace('2', 'abs', 1)
+
+        if 'abs' in answer:
+            answer = answer.replace('abs', '+-', 1)
+
+        return answer
+
+    except Exception as e:
+        return get_translation(chat_id, "error_wolfram")  # Используйте get_translation для сообщений об ошибках
 
 
 def create_back_markup(options, user_id):
@@ -328,13 +327,16 @@ def process_analytical(message):
             if decimal_places < 0:
                 bot.send_message(message.chat.id, get_translation(message.chat.id, "error_negative_accuracy"))
                 markup = create_back_only_markup(message.chat.id)
-                bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructionsn"),
+                bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"),
                                  reply_markup=markup)
                 bot.register_next_step_handler(message, process_analytical)
                 return
 
-        result = wolfram_calc(question)
-        bot.send_message(message.chat.id, f"{result}")
+        result = wolfram_calc(question, message.chat.id)
+
+        bot.send_message(message.chat.id,
+                         get_translation(message.chat.id, "analytic_root_result").format(number=question,
+                                                                                        result=result))
 
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"),
@@ -347,6 +349,7 @@ def process_analytical(message):
         bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"),
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_analytical)
+
 
 
 def sqrt_with_accuracy(num: float, accuracy: int, chat_id: int) -> Decimal:
