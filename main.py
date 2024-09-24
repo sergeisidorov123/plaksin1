@@ -6,8 +6,8 @@ import re
 from decimal import Decimal, getcontext, InvalidOperation
 
 
-TOKEN = ''
-APP_ID = ""
+TOKEN = '7397292799:AAG64mPgGubxVL6d2GieI6qWd2-3T68mujA'
+APP_ID = "VWG2EK-P7TP7TUH3A"
 bot = telebot.TeleBot(TOKEN)
 
 feedback_data = {}
@@ -61,7 +61,7 @@ def create_back_only_markup(user_id):
 
 def send_main_menu(message):
     markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.row('Русский', 'English', 'Español')
+    markup.row('Русский', 'English', 'Español','汉语')
     bot.send_message(message.chat.id, "Выберите язык:", reply_markup=markup)
 
 
@@ -70,7 +70,7 @@ def send_welcome(message):
     send_main_menu(message)
 
 
-@bot.message_handler(func=lambda message: message.text in ['Русский', 'English', 'Español'])
+@bot.message_handler(func=lambda message: message.text in ['Русский', 'English', 'Español','汉语'])
 def handle_language_choice(message):
     if message.text == 'Русский':
         user_language[message.chat.id] = 'ru'
@@ -78,6 +78,8 @@ def handle_language_choice(message):
         user_language[message.chat.id] = 'en'
     elif message.text == 'Español':
         user_language[message.chat.id] = 'es'
+    elif message.text == '汉语':
+        user_language[message.chat.id] = 'ch'
 
     user_state[message.chat.id] = 'main_menu'
 
@@ -142,7 +144,7 @@ def process_arithmetic(message):
 
     try:
         if ',' not in message.text:
-            error_message = "Ошибка: ввод должен быть в формате 'число, точность'"
+            error_message = get_translation(message.chat.id, "arithmetic_input_format_error")
             bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
@@ -153,7 +155,7 @@ def process_arithmetic(message):
         num_str, accuracy_str = map(str.strip, message.text.split(","))
 
         if num_str == "0":
-            bot.send_message(message.chat.id, "Корень из нуля равен нулю.")
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "zero_root_result"))
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
                              reply_markup=markup)
@@ -165,7 +167,7 @@ def process_arithmetic(message):
 
         if accuracy > 1000:
             accuracy = 1000
-            bot.send_message(message.chat.id, "Максимальная точность = 1000. Расчет будет произведен с точностью 1000.")
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "max_accuracy_warning"))
 
         if accuracy < 0 or not accuracy_str.isdigit():
             error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=accuracy_str)
@@ -187,7 +189,7 @@ def process_arithmetic(message):
 
         sqrt_result = sqrt_with_accuracy(num, accuracy, message.chat.id)
         bot.send_message(message.chat.id,
-                         f"Алгебраическим корнем из числа {num} являются числа: +{sqrt_result}, -{sqrt_result}")
+                         get_translation(message.chat.id, "arithmetic_root_result").format(num=num, result=sqrt_result))
 
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "arithmetic_instructions"),
@@ -210,7 +212,7 @@ def process_complex(message):
 
     try:
         if ',' not in message.text or message.text.count(',') != 2:
-            error_message = "Ошибка: ввод должен быть в формате 'реальная часть, мнимая часть, точность'"
+            error_message = get_translation(message.chat.id, "complex_input_format_error")
             bot.send_message(message.chat.id, error_message)
             markup = create_back_only_markup(message.chat.id)
             bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
@@ -226,7 +228,7 @@ def process_complex(message):
 
         if decimal_places > 1000:
             decimal_places = 1000
-            bot.send_message(message.chat.id, "Максимальная точность = 1000. Расчет будет произведен с точностью 1000.")
+            bot.send_message(message.chat.id, get_translation(message.chat.id, "max_accuracy_warning"))
 
         if decimal_places < 0 or not decimal_places_str.isdigit():
             error_message = get_translation(message.chat.id, "error_negative_accuracy").format(input_value=decimal_places_str)
@@ -239,7 +241,8 @@ def process_complex(message):
 
         complex_number = complex(real_part, imaginary_part)
         result = sqrt_of_complex(real_part, imaginary_part, decimal_places)
-        bot.send_message(message.chat.id, f"Алгебраическим корнем из числа {complex_number} является/являются числа: {result}")
+        bot.send_message(message.chat.id,
+                         get_translation(message.chat.id, "complex_root_result").format(complex_number=complex_number, result=result))
 
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "complex_instructions"),
@@ -319,7 +322,7 @@ def sqrt_with_accuracy(num: float, accuracy: int, chat_id: int) -> Decimal:
         guess = (guess + num_decimal / guess) / 2
 
     if guess == 0:
-        raise ValueError("Ошибка: вычисленный guess равен нулю.")
+        raise ValueError("")
 
     return guess.quantize(Decimal(10) ** -accuracy)
 
@@ -341,7 +344,6 @@ def sqrt_of_complex(real_part: Decimal, imaginary_part: Decimal, decimal_places:
     imaginary_decimal = Decimal(sqrt_result.imag).quantize(Decimal(10) ** -decimal_places)
 
     return f"{real_decimal} + {imaginary_decimal}i" if imaginary_decimal >= 0 else f"{real_decimal} - {abs(imaginary_decimal)}i"
-
 
 
 def save_feedback_to_file(user_id):
