@@ -1,4 +1,4 @@
-welcome=¡Bienvenido!
+welcome=¡Bienvenido! Con este programa, puedes calcular diversas raíces cuadradas. Elige la categoría que se adapte a tu tarea:
 arithmetic=Aritmética
 complex=Números complejos
 analytic=Analítica

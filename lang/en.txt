@@ -1,4 +1,4 @@
-welcome=Welcome!
+welcome=Welcome! With this program, you can calculate various square roots. Please choose the category that suits your task:
 arithmetic=Arithmetic
 complex=Complex numbers
 analytic=Analytical

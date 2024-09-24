@@ -1,4 +1,4 @@
-welcome=欢迎!
+welcome=欢迎！使用此程序，您可以计算各种平方根。请选择适合您任务的类别:
 arithmetic=算术
 complex=复数
 analytic=分析
