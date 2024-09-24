@@ -334,9 +334,12 @@ def process_analytical(message):
 
         result = wolfram_calc(question, message.chat.id)
 
-        bot.send_message(message.chat.id,
-                         get_translation(message.chat.id, "analytic_root_result").format(number=question,
-                                                                                        result=result))
+        if "пожалуйста, введите корректное выражение" in result.lower():
+            bot.send_message(message.chat.id, "Пожалуйста, введите корректное выражение.")
+        else:
+            bot.send_message(message.chat.id,
+                             get_translation(message.chat.id, "complex_root_result").format(complex_number=question,
+                                                                                            result=result))
 
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"),
@@ -344,11 +347,12 @@ def process_analytical(message):
         bot.register_next_step_handler(message, process_analytical)
 
     except ValueError:
-        bot.send_message(message.chat.id, get_translation(message.chat.id, "error_string_input"))
+        bot.send_message(message.chat.id, "Пожалуйста, введите корректное выражение.")
         markup = create_back_only_markup(message.chat.id)
         bot.send_message(message.chat.id, get_translation(message.chat.id, "analytic_instructions"),
                          reply_markup=markup)
         bot.register_next_step_handler(message, process_analytical)
+
 
 
 
