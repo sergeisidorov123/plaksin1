@@ -187,7 +187,6 @@ def process_arithmetic(message):
         num = Decimal(num_str)
         accuracy = int(accuracy_str)
 
-
         if accuracy > 1000:
             accuracy = 1000
             bot.send_message(message.chat.id, get_translation(message.chat.id, "max_accuracy_warning"))
@@ -210,7 +209,6 @@ def process_arithmetic(message):
                              reply_markup=markup)
             bot.register_next_step_handler(message, process_arithmetic)
             return
-
 
         sqrt_result = sqrt_with_accuracy(num, accuracy, message.chat.id)
         bot.send_message(message.chat.id,
@@ -338,7 +336,7 @@ def process_analytical(message):
             bot.send_message(message.chat.id, "Пожалуйста, введите корректное выражение.")
         else:
             bot.send_message(message.chat.id,
-                             get_translation(message.chat.id, "analytic_root_result").format(complex_number=question,
+                             get_translation(message.chat.id, "analytic_root_result").format(number=question,
                                                                                             result=result))
 
         markup = create_back_only_markup(message.chat.id)
