@@ -16,7 +16,7 @@ user_state = {}
 
 
 def load_language(language_code):
-    lang_file_path = f'C:/Users/111/Documents/GitHub/plaksin1/lang/{language_code}.txt'
+    lang_file_path = f'./lang/{language_code}.txt'
     if os.path.exists(lang_file_path):
         with open(lang_file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -338,7 +338,7 @@ def process_analytical(message):
             bot.send_message(message.chat.id, "Пожалуйста, введите корректное выражение.")
         else:
             bot.send_message(message.chat.id,
-                             get_translation(message.chat.id, "complex_root_result").format(complex_number=question,
+                             get_translation(message.chat.id, "analytic_root_result").format(complex_number=question,
                                                                                             result=result))
 
         markup = create_back_only_markup(message.chat.id)
